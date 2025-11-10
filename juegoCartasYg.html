@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yu-Gi-Oh! - Juego de Memoria</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=MedievalSharp&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cinzel', serif;
+            background: linear-gradient(135deg, #0c0c1d 0%, #1a0b2e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            color: #d4af37;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('./WallpaperYuGiOh.jpg') center/cover no-repeat;
+            opacity: 0.25;
+            pointer-events: none;
+        }
+
+        .container {
+            max-width: 850px;
+            width: 50%;
+            background: rgba(15, 10, 25, 0.9);
+            border: 3px solid #d4af37;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 0 25px rgba(212, 175, 55, 0.3);
+            text-align: center;
+            backdrop-filter: blur(5px);
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            color: #d4af37;
+            font-size: 2.2rem;
+            text-shadow: 0 0 10px rgba(212, 175, 55, 0.7);
+            font-family: 'MedievalSharp', cursive;
+        }
+
+        .subtitle {
+            color: #b19cd9;
+            margin-bottom: 5px;
+            font-size: 1rem;
+            font-style: italic;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            background: rgba(30, 20, 50, 0.7);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #5d3a8c;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .info-label {
+            font-size: 0.7rem;
+            color: #d4af37;
+        }
+
+        .info-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #d4af37;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            justify-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            width: 100px;
+            height: 145px;
+            background: linear-gradient(135deg, #1a0b2e 0%, #2d1b4e 100%);
+            border: 2px solid #5d3a8c;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+            position: relative;
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .card-front {
+            background: #000;
+            transform: rotateY(180deg);
+            border: 2px solid #d4af37;
+        }
+
+        .card-back {
+            background: url('./card.jpg') center/cover no-repeat;
+        }
+
+        .card-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .card.matched {
+            visibility: hidden;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #5d3a8c 0%, #3d2352 100%);
+            color: #d4af37;
+            border: 2px solid #d4af37;
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(93, 58, 140, 0.5);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            background: linear-gradient(135deg, #6d4a9c 0%, #4d3362 100%);
+        }
+
+        .win-message {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 100;
+            color: #d4af37;
+            font-size: 1.5rem;
+            display: none;
+        }
+
+        .win-message.show {
+            display: flex;
+        }
+
+        .win-content {
+            background: linear-gradient(to bottom, #1a0b2e, #0c0c1d);
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            color: #d4af37;
+            box-shadow: 0 0 25px rgba(93, 58, 140, 0.7);
+            border: 2px solid #d4af37;
+        }
+
+        @media (max-width: 800px) {
+            .game-board {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .card {
+                width: 85px;
+                height: 125px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .game-board {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .card {
+                width: 80px;
+                height: 115px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Yu-Gi-Oh! Memory Duel</h1>
+        <p class="subtitle">¡Encuentra los pares de cartas legendarias!</p>
+        
+        <div class="game-info">
+            <div class="info-item">
+                <span class="info-label">PARES</span>
+                <span class="info-value" id="pairs-found">0/8</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">INTENTOS</span>
+                <span class="info-value" id="attempts">0</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">TIEMPO</span>
+                <span class="info-value" id="timer">0s</span>
+            </div>
+        </div>
+
+        <div class="game-board" id="game-board"></div>
+
+        <div class="controls">
+            <button id="restart-btn">Reiniciar Duelo</button>
+            <button id="hint-btn">Pista Mágica</button>
+        </div>
+    </div>
+
+    <div class="win-message" id="win-message">
+        <div class="win-content">
+            <h2>¡DUELO GANADO!</h2>
+            <p id="win-stats">Completaste el duelo en X intentos y X segundos</p>
+            <button id="play-again-btn">Nuevo Duelo</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const gameBoard = document.getElementById('game-board');
+            const pairsFoundElement = document.getElementById('pairs-found');
+            const attemptsElement = document.getElementById('attempts');
+            const timerElement = document.getElementById('timer');
+            const restartBtn = document.getElementById('restart-btn');
+            const hintBtn = document.getElementById('hint-btn');
+            const winMessage = document.getElementById('win-message');
+            const winStats = document.getElementById('win-stats');
+            const playAgainBtn = document.getElementById('play-again-btn');
+
+            const symbols = [
+                './img/cerberus.jpg',
+                './img/darkMagician.jpg',
+                './img/darkMagicianBlack.jpg',
+                './img/dragonmeteor.jpg',
+                './img/dragonwhite.jpg',
+                './img/guardiangate.jpg',
+                './img/sumonedSkull.jpg',
+                './img/573598294_1127774212892207_2325380886758174613_n.jpg',
+            ];
+
+            let cards = [];
+            let flippedCards = [];
+            let matchedPairs = 0;
+            let attempts = 0;
+            let timer = 0;
+            let timerInterval;
+            let canFlip = true;
+            const totalPairs = 8;
+
+            function initGame() {
+                cards = [];
+                flippedCards = [];
+                matchedPairs = 0;
+                attempts = 0;
+                timer = 0;
+                canFlip = true;
+
+                pairsFoundElement.textContent = `0/${totalPairs}`;
+                attemptsElement.textContent = '0';
+                timerElement.textContent = '0s';
+                gameBoard.innerHTML = '';
+
+                let cardSymbols = [...symbols, ...symbols];
+                cardSymbols = shuffleArray(cardSymbols);
+
+                cardSymbols.forEach((symbol, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.dataset.symbol = symbol;
+
+                    const cardFront = document.createElement('div');
+                    cardFront.className = 'card-front';
+                    const img = document.createElement('img');
+                    img.src = symbol;
+                    img.alt = 'Carta Yu-Gi-Oh!';
+                    img.classList.add('card-image');
+                    cardFront.appendChild(img);
+
+                    const cardBack = document.createElement('div');
+                    cardBack.className = 'card-back';
+
+                    card.appendChild(cardFront);
+                    card.appendChild(cardBack);
+                    card.addEventListener('click', () => flipCard(card));
+
+                    gameBoard.appendChild(card);
+                    cards.push(card);
+                });
+
+                clearInterval(timerInterval);
+                timerInterval = setInterval(() => {
+                    timer++;
+                    timerElement.textContent = `${timer}s`;
+                }, 1000);
+            }
+
+            function flipCard(card) {
+                if (!canFlip || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+                card.classList.add('flipped');
+                flippedCards.push(card);
+
+                if (flippedCards.length === 2) {
+                    canFlip = false;
+                    attempts++;
+                    attemptsElement.textContent = attempts;
+                    setTimeout(checkMatch, 800);
+                }
+            }
+
+            function checkMatch() {
+                const [card1, card2] = flippedCards;
+                if (card1.dataset.symbol === card2.dataset.symbol) {
+                    card1.classList.add('matched');
+                    card2.classList.add('matched');
+                    matchedPairs++;
+                    pairsFoundElement.textContent = `${matchedPairs}/${totalPairs}`;
+                    if (matchedPairs === totalPairs) endGame();
+                } else {
+                    card1.classList.remove('flipped');
+                    card2.classList.remove('flipped');
+                }
+                flippedCards = [];
+                canFlip = true;
+            }
+
+            function endGame() {
+                clearInterval(timerInterval);
+                winStats.textContent = `Completaste el duelo en ${attempts} intentos y ${timer} segundos`;
+                winMessage.classList.add('show');
+            }
+
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+
+            restartBtn.addEventListener('click', initGame);
+            hintBtn.addEventListener('click', giveHint);
+            playAgainBtn.addEventListener('click', () => {
+                winMessage.classList.remove('show');
+                initGame();
+            });
+
+            function giveHint() {
+                const unpaired = cards.filter(c => !c.classList.contains('matched') && !c.classList.contains('flipped'));
+                if (unpaired.length >= 2) {
+                    const card1 = unpaired[0];
+                    const card2 = unpaired.find(c => c !== card1 && c.dataset.symbol === card1.dataset.symbol);
+                    if (card2) {
+                        card1.classList.add('flipped');
+                        card2.classList.add('flipped');
+                        setTimeout(() => {
+                            if (!card1.classList.contains('matched')) card1.classList.remove('flipped');
+                            if (!card2.classList.contains('matched')) card2.classList.remove('flipped');
+                        }, 1000);
+                    }
+                }
+            }
+
+            initGame();
+        });
+    </script>
+</body>
+</html>
